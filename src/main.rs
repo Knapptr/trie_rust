@@ -137,7 +137,7 @@ fn main() {
         }
         root.add_word(&word.to_ascii_lowercase());
     }
-    // println!("{:?} Words Added", root.get_all_words().len());
+    println!("{:?} Words Added", root.get_all_words().len());
     // println!("Search for:");
     // let mut usr_input = String::new();
     // std::io::stdin().read_line(&mut usr_input).unwrap();
