@@ -1,3 +1,8 @@
+use std::{
+    collections::HashSet,
+    path::{self, Path},
+};
+
 #[derive(Clone, Debug)]
 struct NodeList {
     nodes: Vec<Option<Box<Node>>>,
@@ -16,8 +21,13 @@ impl NodeList {
     }
     fn add_char(&mut self, char: char, terminal: bool) {
         let char_value = (char as u8 - b'a') as usize;
-        match &self.nodes[char_value] {
-            Some(_) => (),
+        match &mut self.nodes[char_value] {
+            Some(child) => {
+                if child.terminal {
+                    return;
+                }
+                child.terminal = terminal;
+            }
             None => self.nodes[char_value] = Some(Box::new(Node::new(char, terminal))),
         }
     }
@@ -39,6 +49,28 @@ impl NodeList {
             }
         }
     }
+    fn get_all_words(&self) -> Vec<String> {
+        let mut words: Vec<String> = Vec::new();
+
+        if let Some(children) = self.existing_nodes() {
+            for child in children {
+                words.append(&mut child.words_from())
+            }
+        }
+        words
+    }
+    fn existing_nodes(&self) -> Option<Vec<&Box<Node>>> {
+        let children: Vec<&Box<Node>> = self
+            .nodes
+            .iter()
+            .filter(|c| c.is_some())
+            .map(|n| n.as_ref().unwrap())
+            .collect();
+        if children.len() == 0 {
+            return None;
+        }
+        Some(children)
+    }
 }
 impl Node {
     fn new(char: char, terminal: bool) -> Self {
@@ -48,17 +80,51 @@ impl Node {
             terminal,
         }
     }
+    fn get_children(&self) -> Option<Vec<&Box<Node>>> {
+        self.children.existing_nodes()
+    }
     fn words_from(&self) -> Vec<String> {
-        //descend tree
-        //when finding a terminal node, push that node to the list
-        unimplemented!()
+        // push letter to stack
+        let mut letter_stack = vec![];
+        let mut word_list = vec![];
+
+        fn helper<'a>(node: &'a Node, stack: &mut Vec<&'a Node>, word_list: &mut Vec<String>) {
+            stack.push(node);
+            if node.terminal {
+                word_list.push(stack.iter().map(|x| x.value).collect());
+            }
+            if let Some(children) = node.get_children() {
+                for child in children {
+                    helper(child, stack, word_list);
+                    stack.pop();
+                }
+            }
+        }
+
+        helper(self, &mut letter_stack, &mut word_list);
+
+        word_list
     }
 }
 
 fn main() {
     let mut root = NodeList::new();
+    root.add_word("a");
+    root.add_word("an");
+    root.add_word("ant");
+    root.add_word("anti");
+    root.add_word("anagram");
+    root.add_word("basic");
+    root.add_word("basically");
+    println!("{:?}", root.get_all_words());
+}
+
+#[cfg(test)]
+#[test]
+fn test_get_nodes() {
+    let mut root = NodeList::new();
     root.add_word("abc");
-    println!("{:?}", root);
-    root.add_word("abd");
-    println!("{:?}", root);
+    assert_eq!(root.existing_nodes().unwrap().len(), 1);
+    root.add_word("bc");
+    assert_eq!(root.existing_nodes().unwrap().len(), 2);
 }
