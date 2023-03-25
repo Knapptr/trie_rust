@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    path::{self, Path},
-};
+use std::{path::Path, thread::current};
 
 #[derive(Clone, Debug)]
 struct NodeList {
@@ -71,6 +68,22 @@ impl NodeList {
         }
         Some(children)
     }
+    fn find_starts_with(&self, str: &str) -> Vec<String> {
+        let mut current_index = self;
+        for char in str.chars() {
+            let value = (char as u8 - b'a') as usize;
+            if let Some(current_node) = &current_index.nodes[value] {
+                current_index = &current_node.children;
+            } else {
+                panic!()
+            }
+        }
+        current_index
+            .get_all_words()
+            .iter()
+            .map(|x| format!("{}{}", str, x))
+            .collect()
+    }
 }
 impl Node {
     fn new(char: char, terminal: bool) -> Self {
@@ -109,14 +122,31 @@ impl Node {
 
 fn main() {
     let mut root = NodeList::new();
-    root.add_word("a");
-    root.add_word("an");
-    root.add_word("ant");
-    root.add_word("anti");
-    root.add_word("anagram");
-    root.add_word("basic");
-    root.add_word("basically");
-    println!("{:?}", root.get_all_words());
+    // root.add_word("a");
+    // root.add_word("an");
+    // root.add_word("ant");
+    // root.add_word("anti");
+    // root.add_word("anagram");
+    // root.add_word("basic");
+    // root.add_word("basically");
+    // println!("{:?}", root.get_all_words());
+    let words = std::fs::read_to_string(Path::new("/usr/share/dict/american-english")).unwrap();
+    for word in words.split("\n") {
+        if word.contains(|c: char| !c.is_ascii_alphabetic()) {
+            continue;
+        }
+        root.add_word(&word.to_ascii_lowercase());
+    }
+    println!("{:?} Words Added", root.get_all_words().len());
+    println!("Search for:");
+    let mut usr_input = String::new();
+    std::io::stdin().read_line(&mut usr_input).unwrap();
+    usr_input = usr_input.trim().to_string();
+    println!(
+        "Begin with {}: {:?}",
+        &usr_input,
+        root.find_starts_with(&usr_input)
+    );
 }
 
 #[cfg(test)]
