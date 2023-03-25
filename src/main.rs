@@ -127,9 +127,12 @@ fn main() {
     // println!("{:?}", root.get_all_words());
     let words = std::fs::read_to_string(Path::new("/usr/share/dict/american-english")).unwrap();
     for word in words.split("\n") {
+        if word.contains(|c: char| !c.is_ascii_alphabetic()) {
+            continue;
+        }
         root.add_word(&word.to_ascii_lowercase());
     }
-    // println!("{:?} Words Added", root.get_all_words().len());
+    println!("{:?} Words Added", root.get_all_words().len());
     // println!("Search for:");
     // let mut usr_input = String::new();
     // std::io::stdin().read_line(&mut usr_input).unwrap();
